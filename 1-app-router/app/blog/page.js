@@ -8,4 +8,4 @@ export default function Blog(){
             <p><Link href="/blog/post-2">Post 2</Link></p>
         </main>
     )
-}
+}       
