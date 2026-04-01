@@ -5,12 +5,30 @@ import { useOptimistic } from 'react';
 import { formatDate } from '@/lib/format';
 import LikeButton from './like-icon';
 import { togglePostLikeStatus } from '@/actions/posts';
+import Image from 'next/image';
+
+function imageLoader(config){
+  // here we are dividing the src of an image and add width and height into that url after the upload into the url
+  const urlStart = config.src.split('upload/')[0];
+  const urlEnd = config.src.split('upload/')[1];
+
+  const transformation = `w_200,q_${config.quality}`;
+  return `${urlStart}upload/${transformation}/${urlEnd}`;
+}
 
 function Post({ post, action }) {
   return (
     <article className="post">
       <div className="post-image">
-        <img src={post.image} alt={post.title} />
+        <Image 
+          loader = {imageLoader}  
+          src={post.image} 
+          // width={200}
+          // height={120}
+          alt={post.title} 
+          fill
+          quality={50} // this will set the quality of the image on scale 1 to 100
+        />
       </div>
       <div className="post-content">
         <header>

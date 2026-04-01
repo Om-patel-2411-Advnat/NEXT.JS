@@ -1,10 +1,12 @@
 'use server';
 
-const { hashUserPassword } = require("@/lib/hash");
-const { createUser } = require("@/lib/user");
+import { createAuthSession, destroySession } from "@/lib/auth";
+
+const { hashUserPassword, verifyPassword } = require("@/lib/hash");
+const { createUser, getUserByEmail } = require("@/lib/user");
 const { redirect } = require("next/navigation");
 
-export async function SingUp(prev , formData){
+export async function SingUp(prevState , formData){
     const email = formData.get('email');
     const password = formData.get('password');
 
@@ -25,7 +27,9 @@ export async function SingUp(prev , formData){
 
     const hashedPassword = await hashUserPassword(password);
     try {
-        await createUser(email, hashedPassword);
+        const id =await createUser(email, hashedPassword);
+        await createAuthSession(id);
+        redirect('/training');
     } catch (error) {
         if (error.code === "SQLITE_CONSTRAINT_UNIQUE"){
             return {
@@ -36,6 +40,45 @@ export async function SingUp(prev , formData){
         }
         throw error  ;
     }
+}
 
-    redirect('/training');
+export async function login(prevState , formData){
+    const email = formData.get('email');
+    const password = formData.get('password');
+
+    const existingUser = getUserByEmail(email);
+
+    if(!existingUser){
+        return {
+            errors : {
+                email : "Credentials are wrong "
+            }
+        }
+    }
+
+    const isValidPassword = verifyPassword(existingUser.password , password);
+
+    if(!isValidPassword){
+        return {
+            errors: {
+                password: "wrong password "
+            }
+        }
+    }
+
+    await createAuthSession(existingUser.id);
+    redirect('/training');    
+}
+
+export async function auth(mode , prevState , formData){
+    if(mode === 'login'){
+        return login(prevState , formData);
+    }
+
+    return SingUp(prevState , formData);
+}
+
+export async function logout(){
+    await destroySession ();
+    redirect('/');
 }
